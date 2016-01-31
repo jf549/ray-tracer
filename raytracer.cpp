@@ -6,7 +6,7 @@
 #define CANVAS_WIDTH 500
 #define CANVAS_HEIGHT 500
 #define CANVAS_DEPTH 400
-#define MAX_RAY_DEPTH 3
+#define MAX_RAY_DEPTH 10
 #define BIAS 1e-4
 
 class Colour {
@@ -177,6 +177,7 @@ Colour trace(const Vector3D &rayOrig, const Vector3D &rayDir, const std::vector<
     if (intersectSphere) {
         //ambient reflection
         c += intersectSphere->surfaceColour * 0.2;
+        c += intersectSphere->emissionColour;
 
         Vector3D pIntersection = rayOrig + rayDir * closestIntersect;
         Vector3D nIntersection = (pIntersection - intersectSphere->centre).norm();
@@ -209,7 +210,9 @@ Colour trace(const Vector3D &rayOrig, const Vector3D &rayDir, const std::vector<
 
         //specular reflection
         if (intersectSphere->ks > 0 && recursionDepth < MAX_RAY_DEPTH) {
-            //todo
+            Vector3D reflRay = (rayDir - nIntersection * 2 * rayDir.dot(nIntersection)).norm();
+            c += trace(pIntersection + nIntersection * BIAS, reflRay, spheres, recursionDepth + 1)
+                 * intersectSphere->ks; //todo: phong
         }
 
     }
@@ -241,13 +244,15 @@ void render(const std::vector<Sphere> &spheres) {
 
 int main(int argc, char const *argv[]) {
     std::vector<Sphere> spheres;
-    spheres.push_back(Sphere(Vector3D(30.0, 10.0, 600.0), 70.0, Colour(0.90, 0.20, 0.20), 0.8, 0.2));
-    spheres.push_back(Sphere(Vector3D(-150, -150, 620.0), 90.0, Colour(0.00, 0.7, 0.7), 1.0, 0));
+    spheres.push_back(Sphere(Vector3D(30.0, 10.0, 600.0), 70.0, Colour(0.90, 0.20, 0.20), 0.6, 0.4));
+    spheres.push_back(Sphere(Vector3D(-150, -150, 620.0), 90.0, Colour(0.00, 0.7, 0.7), 0.4, 0.6));
     //spheres.push_back(Sphere(Vector3D(5.0, -1, -15), 2, Colour(0.90, 0.76, 0.46)));
     //spheres.push_back(Sphere(Vector3D(5.0, 0, -25), 3, Colour(0.65, 0.77, 0.97)));
     //spheres.push_back(Sphere(Vector3D(-5.5, 0, -15), 3, Colour(0.90, 0.90, 0.90)));
 
-    spheres.push_back(Sphere(Vector3D(-200, -200, 400.0), 10.0, Colour(0, 0, 0), Colour(1, 1, 1))); //light
+    spheres.push_back(Sphere(Vector3D(-300, -300, 400.0), 40.0, Colour(0, 0, 0), Colour(1, 1, 1))); //light
+    //spheres.push_back(Sphere(Vector3D(200, 200, 400.0), 40.0, Colour(0, 0, 0), Colour(1, 1, 1))); //light
+    spheres.push_back(Sphere(Vector3D(10, 10, -100), 100.0, Colour(0, 0, 0), Colour(1, 1, 1)));
 
     render(spheres);
 
